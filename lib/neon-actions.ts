@@ -21,7 +21,14 @@ const validFile=(file:FileUpload|undefined,types:string[],max:number)=>{
 };
 const pdf='application/pdf',png='image/png';
 const materialTypes=[pdf,png,'image/jpeg','application/zip','application/vnd.openxmlformats-officedocument.presentationml.presentation','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
-const inventory=async()=> (await records<Json>('inventory')).map(it=>({...it,total:Number(it.total),active:isTrue(it.active)}));
+type InventoryRow = Json & { id: string; total: number; active: boolean };
+const inventory = async (): Promise<InventoryRow[]> =>
+  (await records<Json>('inventory')).map((it): InventoryRow => ({
+    ...it,
+    id: String(it.id ?? ''),
+    total: Number(it.total),
+    active: isTrue(it.active),
+  }));
 async function available(request:Json){
   const item=(await inventory()).find(it=>it.id===request.itemId&&it.active);
   if(!item)throw Error('Alat tidak terdaftar / nonaktif.');
