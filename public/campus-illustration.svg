@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" role="img" aria-label="Ilustrasi arsitektur kampus dengan warna hijau dan emas">
+ <defs><linearGradient id="sky" x2="1" y2="1"><stop stop-color="#d6efe6"/><stop offset="1" stop-color="#f9edc9"/></linearGradient><linearGradient id="wall" x2="1" y2=".5"><stop stop-color="#ebf1df"/><stop offset="1" stop-color="#ffffff"/></linearGradient><linearGradient id="glass" x2="1"><stop stop-color="#155c51"/><stop offset="1" stop-color="#348979"/></linearGradient></defs>
+ <rect width="900" height="900" fill="url(#sky)"/>
+ <circle cx="710" cy="165" r="112" fill="#f3d57e" opacity=".8"/>
+ <path d="M0 659Q220 589 423 654T900 634V900H0Z" fill="#c0dac4"/>
+ <path d="M0 735Q300 676 550 732T900 704V900H0Z" fill="#80b4a0"/>
+ <rect x="86" y="375" width="724" height="396" rx="8" fill="url(#wall)" stroke="#bbcdb8" stroke-width="7"/>
+ <path d="M62 372L450 180l385 192Z" fill="#125d50"/><path d="M136 339L450 206l313 133Z" fill="#e0b443"/>
+ <path d="M373 386v385h157V386" fill="#e7d5a4"/>
+ <path d="M387 758V493Q450 386 515 493v265" fill="url(#glass)" stroke="#d3a742" stroke-width="9"/>
+ <path d="M449 426v332" stroke="#e6be5a" stroke-width="8"/>
+ <g fill="url(#glass)"><rect x="126" y="437" width="126" height="102" rx="5"/><rect x="646" y="437" width="126" height="102" rx="5"/><rect x="126" y="585" width="126" height="102" rx="5"/><rect x="646" y="585" width="126" height="102" rx="5"/></g>
+ <g stroke="#d6b252" stroke-width="8"><path d="M189 437v102M126 488h126M709 437v102M646 488h126M189 585v102M126 636h126M709 585v102M646 636h126"/></g>
+ <path d="M0 791h900v109H0" fill="#e8e5d3"/><path d="M0 844h900" stroke="#bbc2a8" stroke-width="6"/>
+ <g fill="#186757"><path d="M72 785Q-15 715 60 582Q114 628 72 785Z"/><path d="M70 785Q88 645 156 615Q176 736 70 785Z"/><path d="M817 786Q747 633 828 578Q884 690 817 786Z"/><path d="M822 785Q842 656 900 641V785Z"/></g>
+ <text x="450" y="102" text-anchor="middle" font-family="sans-serif" font-size="21" font-weight="bold" fill="#175c4f" letter-spacing="7">UIN SUNAN KALIJAGA</text>
+</svg>

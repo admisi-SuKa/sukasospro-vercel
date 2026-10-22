@@ -1,0 +1,26 @@
+{
+  "name": "sospro-uin-suka",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:admin": "node scripts/setup-neon-admin.mjs",
+    "db:migrate-legacy": "node scripts/import-legacy-data.mjs",
+    "test:neon": "node scripts/test-neon-integration.mjs"
+  },
+  "dependencies": {
+    "next": "15.5.24",
+    "react": "19.1.6",
+    "react-dom": "19.1.6",
+    "@neondatabase/serverless": "^1.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.30",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
+    "typescript": "5.8.3"
+  }
+}
