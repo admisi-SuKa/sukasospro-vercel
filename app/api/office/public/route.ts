@@ -1,5 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {callOffice,isSafeString,safeUpload,validOrigin} from "@/lib/office";
+import {programs} from "@/data/programs";
 export const maxDuration=60;
 export async function POST(req:NextRequest){
   if (!validOrigin(req)) return NextResponse.json({error:"Origin ditolak"},{status:403});
@@ -14,14 +15,20 @@ export async function POST(req:NextRequest){
     }
     if(body?.action !== "submit" || !["SOSPRO","ALAT"].includes(body.kind)) return NextResponse.json({error:"Jenis permohonan tidak valid"},{status:400});
     const f=body.form || {};
-    for(const field of ["name","institution","phone","purpose","dateStart","dateEnd"]){
+    for(const field of ["name","phone","email","purpose","location","dateStart","dateEnd"]){
       if(!isSafeString(f[field],field==="purpose"?1500:200)) return NextResponse.json({error:`Kolom ${field} wajib diisi atau terlalu panjang`},{status:400});
     }
+    if(!/^\S+@\S+\.\S+$/.test(f.email))return NextResponse.json({error:"Email tidak valid"},{status:400});
     if(!/^\d{4}-\d{2}-\d{2}$/.test(f.dateStart) || !/^\d{4}-\d{2}-\d{2}$/.test(f.dateEnd) || f.dateEnd<f.dateStart) return NextResponse.json({error:"Rentang tanggal tidak valid"},{status:400});
     if(body.kind==="SOSPRO"){
-      if(!isSafeString(f.school,200) || !Number.isInteger(Number(f.target)) || Number(f.target)<1 || Number(f.target)>1000000) return NextResponse.json({error:"Asal sekolah atau target peserta tidak valid"},{status:400});
-    } else {
-      if(!isSafeString(f.itemId,70) || !Number.isInteger(Number(f.quantity)) || Number(f.quantity)<1 || Number(f.quantity)>10000) return NextResponse.json({error:"Alat atau jumlah tidak valid"},{status:400});
+      if(!isSafeString(f.institution,200)||!isSafeString(f.position,150)||!Number.isInteger(Number(f.target))||Number(f.target)<1||Number(f.target)>1000000)
+        return NextResponse.json({error:"Sekolah/Institusi, jabatan, atau target peserta tidak valid"},{status:400});
+    }else{
+      const prodi=programs.find(p=>p.id===f.prodiId && p.faculty===f.faculty);
+      if(!prodi) return NextResponse.json({error:"Pilih Fakultas dan Prodi yang sesuai"},{status:400});
+      if(typeof f.materialsRequest!=="string"||f.materialsRequest.length>2000) return NextResponse.json({error:"Rincian bahan Sospro terlalu panjang"},{status:400});
+      if(!String(f.materialsRequest).trim()&&!String(f.itemId||"").trim()) return NextResponse.json({error:"Isi bahan Sospro atau pilih alat yang dipinjam"},{status:400});
+      if(f.itemId && (!isSafeString(f.itemId,70)||!Number.isInteger(Number(f.quantity))||Number(f.quantity)<1||Number(f.quantity)>10000))return NextResponse.json({error:"Alat atau jumlah tidak valid"},{status:400});
     }
     if(body.attachment && !safeUpload(body.attachment)) return NextResponse.json({error:"Lampiran hanya boleh PDF maksimal 2 MB"},{status:400});
     if(body.kind==="SOSPRO" && !body.attachment) return NextResponse.json({error:"Lampiran surat PDF wajib diunggah"},{status:400});

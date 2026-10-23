@@ -10,7 +10,7 @@ const levels:StudyLevel[]=['S1','D4','S2','S3','PROFESI'];
 const icons=['bi-mortarboard','bi-book','bi-journal-bookmark','bi-bank','bi-award'];
 const services=[
  {icon:'bi-file-earmark-text',title:'Permohonan Sospro',desc:'Ajukan permintaan sosialisasi ke Admisi.',href:'/layanan/sospro',className:'wide'},
- {icon:'bi-projector',title:'Peminjaman Alat',desc:'Ajukan peminjaman fasilitas kegiatan.',href:'/layanan/peminjaman',className:''},
+ {icon:'bi-projector',title:'Permintaan Bahan & Alat',desc:'Ajukan bahan promosi atau pinjam alat kegiatan.',href:'/layanan/peminjaman',className:''},
  {icon:'bi-collection',title:'Bahan Sospro',desc:'Unduh materi, brosur, dan presentasi.',href:'/layanan/bahan',className:''},
  {icon:'bi-search-heart',title:'Cek Status',desc:'Pantau proses pengajuan secara mandiri.',href:'/layanan/status',className:''},
 ];
