@@ -27,8 +27,8 @@ export async function POST(req:NextRequest){
       const prodi=programs.find(p=>p.id===f.prodiId && p.faculty===f.faculty);
       if(!prodi) return NextResponse.json({error:"Pilih Fakultas dan Prodi yang sesuai"},{status:400});
       if(typeof f.materialsRequest!=="string"||f.materialsRequest.length>2000) return NextResponse.json({error:"Rincian bahan Sospro terlalu panjang"},{status:400});
-      if(!String(f.materialsRequest).trim()&&!String(f.itemId||"").trim()) return NextResponse.json({error:"Isi bahan Sospro atau pilih alat yang dipinjam"},{status:400});
-      if(f.itemId && (!isSafeString(f.itemId,70)||!Number.isInteger(Number(f.quantity))||Number(f.quantity)<1||Number(f.quantity)>10000))return NextResponse.json({error:"Alat atau jumlah tidak valid"},{status:400});
+      if(typeof f.equipmentRequest!=="string"||f.equipmentRequest.length>2000) return NextResponse.json({error:"Rincian alat terlalu panjang"},{status:400});
+      if(!f.materialsRequest.trim()&&!f.equipmentRequest.trim()) return NextResponse.json({error:"Isi bahan Sospro atau alat yang dipinjam"},{status:400});
     }
     if(body.attachment && !safeUpload(body.attachment)) return NextResponse.json({error:"Lampiran hanya boleh PDF maksimal 2 MB"},{status:400});
     if(body.kind==="SOSPRO" && !body.attachment) return NextResponse.json({error:"Lampiran surat PDF wajib diunggah"},{status:400});

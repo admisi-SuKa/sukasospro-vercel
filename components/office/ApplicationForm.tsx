@@ -1,10 +1,9 @@
 "use client";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { programs } from "@/data/programs";
 import SignaturePad from "./SignaturePad";
 
-type Inventory = { id: string; name: string; category: string; total: number; active?: boolean };
 type Result = { code: string; token: string };
 const faculties = [...new Set(programs.map(p => p.faculty))].sort((a, b) => a.localeCompare(b, "id"));
 function readPdf(file: File): Promise<{ name: string; mime: string; data: string }> {
@@ -19,21 +18,17 @@ export default function ApplicationForm({ kind }: { kind: "SOSPRO" | "ALAT" }) {
   const sos = kind === "SOSPRO";
   const [form, setForm] = useState<Record<string, string>>({
     name: "", position: "", institution: "", faculty: "", prodiId: "", phone: "", email: "",
-    purpose: "", target: "", location: "", dateStart: "", dateEnd: "", itemId: "",
-    quantity: "1", materialsRequest: ""
+    purpose: "", target: "", location: "", dateStart: "", dateEnd: "",
+    materialsRequest: "", equipmentRequest: ""
   });
   const [files, setFiles] = useState<File | null>(null);
   const [signature, setSignature] = useState("");
-  const [items, setItems] = useState<Inventory[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<Result | null>(null);
   const [consent, setConsent] = useState(false);
   const prodiOptions = useMemo(() => programs.filter(p => p.faculty === form.faculty)
     .sort((a,b) => a.name.localeCompare(b.name,"id") || a.level.localeCompare(b.level)), [form.faculty]);
-  useEffect(() => {
-    if (!sos) fetch("/api/office/public").then(r => r.json()).then(j => j.ok && setItems(j.data || [])).catch(() => {});
-  }, [sos]);
   function f(field: string) {
     return { value: form[field] || "", onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
       const value = e.target.value;
@@ -43,8 +38,8 @@ export default function ApplicationForm({ kind }: { kind: "SOSPRO" | "ALAT" }) {
   async function submit(e: FormEvent) {
     e.preventDefault(); setError("");
     if (!consent || !signature) { setError("Setujui pernyataan data dan bubuhkan tanda tangan terlebih dahulu."); return; }
-    if (!sos && !form.materialsRequest.trim() && !form.itemId) {
-      setError("Isi bahan Sospro yang diminta atau pilih alat yang ingin dipinjam."); return;
+    if (!sos && !form.materialsRequest.trim() && !form.equipmentRequest.trim()) {
+      setError("Isi bahan Sospro yang diminta atau alat yang ingin dipinjam."); return;
     }
     setSaving(true);
     try {
@@ -90,9 +85,11 @@ export default function ApplicationForm({ kind }: { kind: "SOSPRO" | "ALAT" }) {
           <label className="office-span">Perihal dan tujuan kegiatan <em>*</em><textarea required maxLength={1500} rows={3} placeholder="Jelaskan tujuan dan bentuk kegiatan" {...f("purpose")}/></label>
           {sos ? <label>Target peserta <em>*</em><input required type="number" min="1" max="1000000" placeholder="Jumlah peserta" {...f("target")}/></label> : <>
             <label className="office-span">Bahan Sospro yang diminta<textarea maxLength={2000} rows={3} placeholder="Contoh: Brosur penerimaan S1 (100 eksemplar), booklet prodi (20 eksemplar)" {...f("materialsRequest")}/><small>Isi bila membutuhkan bahan fisik. Sebutkan nama bahan dan jumlahnya.</small></label>
-            <label>Alat yang ingin dipinjam<select {...f("itemId")}><option value="">Tidak meminjam alat</option>{items.filter(it => it.active !== false).map(it => <option key={it.id} value={it.id}>{it.name} (total: {it.total})</option>)}</select></label>
-            {form.itemId && <label>Jumlah alat <em>*</em><input required type="number" min="1" max="10000" {...f("quantity")}/></label>}
-            <small className="office-span">Pilih minimal satu kebutuhan: bahan Sospro atau alat. Keduanya boleh diajukan bersamaan.</small>
+            <label className="office-span">Alat yang ingin dipinjam
+              <textarea maxLength={2000} rows={3} placeholder="Contoh: Proyektor 1 unit, layar proyektor 1 unit, mikrofon 2 unit" {...f("equipmentRequest")}/>
+              <small>Isi nama alat beserta jumlahnya. Tidak perlu memilih dari daftar inventaris.</small>
+            </label>
+            <small className="office-span">Isi minimal satu kebutuhan: bahan Sospro atau alat yang dipinjam. Keduanya boleh diajukan bersamaan.</small>
           </>}
           <label>Tanggal mulai <em>*</em><input required type="date" {...f("dateStart")}/></label>
           <label>Tanggal selesai <em>*</em><input required type="date" min={form.dateStart || undefined} {...f("dateEnd")}/></label>

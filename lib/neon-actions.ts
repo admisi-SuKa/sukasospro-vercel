@@ -97,16 +97,16 @@ export async function runNeon<T=unknown>(action:string,b:Json={}):Promise<T>{
    const study=b.kind==='ALAT'?programs.find(p=>p.id===f.prodiId&&p.faculty===f.faculty):null;
    if(b.kind==='ALAT'&&!study)throw Error('Fakultas dan Prodi tidak valid');
    const materialsRequest=s(f.materialsRequest,2000);
-   if(b.kind==='ALAT'&&!materialsRequest&&!s(f.itemId))throw Error('Isi bahan Sospro atau pilih alat yang dipinjam');
+   const equipmentRequest=s(f.equipmentRequest,2000);
+   if(b.kind==='ALAT'&&!materialsRequest&&!equipmentRequest)throw Error('Isi bahan Sospro atau alat yang dipinjam');
    if(f.dateStart>f.dateEnd)throw Error('Rentang tanggal tidak valid');
-   if(b.kind==='ALAT'&&f.itemId){const item=(await inventory()).find(i=>i.id===f.itemId&&i.active);if(!item||!Number.isInteger(+f.quantity)||+f.quantity<1||+f.quantity>item.total)throw Error('Alat atau stok tidak valid');}
    if(b.kind==='SOSPRO'&&(!Number(f.target)||!b.attachment))throw Error('Target peserta dan surat PDF wajib diisi');
    const sign=String(b.signature||'');if(!/^data:image\/png;base64,/.test(sign))throw Error('Tanda tangan wajib berupa PNG');
    const code=await nextCode(b.kind==='SOSPRO'?'SOS':'ALT');const token=crypto.randomBytes(32).toString('hex');
    // Upload ke Drive lebih dahulu, simpan ID file di Neon; kegagalan DB dapat menyisakan file privat orphan.
    const attId=b.attachment?(await uploadDrive(validFile(b.attachment,[pdf],2_000_000))).id:'';
    const signatureId=(await uploadDrive(validFile({name:code+'-ttd.png',mime:png,data:sign.split(',')[1]},[png],500_000))).id;
-   const req={code,tokenHash:sha(token),kind:b.kind,name:s(f.name),position:b.kind==='SOSPRO'?s(f.position,150):'',institution:b.kind==='SOSPRO'?s(f.institution):s(f.location),faculty:b.kind==='ALAT'?s(f.faculty):'',prodi:b.kind==='ALAT'?study?.name||'':'',prodiLevel:b.kind==='ALAT'?study?.level||'':'',prodiId:b.kind==='ALAT'?s(f.prodiId):'',school:b.kind==='SOSPRO'?s(f.institution):'',phone:s(f.phone),email:s(f.email),purpose:s(f.purpose,1500),target:s(f.target,20),location:s(f.location),dateStart:f.dateStart,dateEnd:f.dateEnd,itemId:s(f.itemId),quantity:f.itemId?String(f.quantity):'',materialsRequest:b.kind==='ALAT'?materialsRequest:'',status:'PENDING',note:'',attachmentId:attId,signatureId,signedPdfId:'',createdAt:now(),updatedAt:now()};
+   const req={code,tokenHash:sha(token),kind:b.kind,name:s(f.name),position:b.kind==='SOSPRO'?s(f.position,150):'',institution:b.kind==='SOSPRO'?s(f.institution):s(f.location),faculty:b.kind==='ALAT'?s(f.faculty):'',prodi:b.kind==='ALAT'?study?.name||'':'',prodiLevel:b.kind==='ALAT'?study?.level||'':'',prodiId:b.kind==='ALAT'?s(f.prodiId):'',school:b.kind==='SOSPRO'?s(f.institution):'',phone:s(f.phone),email:s(f.email),purpose:s(f.purpose,1500),target:s(f.target,20),location:s(f.location),dateStart:f.dateStart,dateEnd:f.dateEnd,itemId:'',quantity:'',materialsRequest:b.kind==='ALAT'?materialsRequest:'',equipmentRequest:b.kind==='ALAT'?equipmentRequest:'',status:'PENDING',note:'',attachmentId:attId,signatureId,signedPdfId:'',createdAt:now(),updatedAt:now()};
    await saveRecord('requests',code,req);await logAction(code,'Pemohon','PENDING','Pengajuan masuk');result={code,token};break;
   }
   case 'track':{
@@ -125,8 +125,9 @@ export async function runNeon<T=unknown>(action:string,b:Json={}):Promise<T>{
    const user=await currentUser(b.actor),d=b.payload||{},r=await record<Json>('requests',s(d.code,80));if(!r)throw Error('Permohonan tidak ditemukan');
    const next=action==='handover'?'OUT':action==='returnItem'?'RETURNED':s(d.status,30),note=s(d.note,2000);
    if(action==='decision'&&!['REVIEWED','REVISION','REJECTED','APPROVED'].includes(next))throw Error('Status tidak dikenal');
-   if(action==='handover' && (user.role!=='admin'||r.kind!=='ALAT'||!r.itemId||r.status!=='APPROVED'))throw Error('Serah terima tidak diizinkan');
-   if(action==='returnItem' && (user.role!=='admin'||r.kind!=='ALAT'||!r.itemId||r.status!=='OUT'))throw Error('Pengembalian tidak diizinkan');
+   const hasEquipment=Boolean(r.itemId||r.equipmentRequest);
+   if(action==='handover' && (user.role!=='admin'||r.kind!=='ALAT'||!hasEquipment||r.status!=='APPROVED'))throw Error('Serah terima tidak diizinkan');
+   if(action==='returnItem' && (user.role!=='admin'||r.kind!=='ALAT'||!hasEquipment||r.status!=='OUT'))throw Error('Pengembalian tidak diizinkan');
    if(action==='decision'){
     if(!['PENDING','REVIEWED','REVISION'].includes(r.status))throw Error('Permohonan sudah diproses final');
     if(r.kind==='SOSPRO'){
@@ -137,9 +138,10 @@ export async function runNeon<T=unknown>(action:string,b:Json={}):Promise<T>{
     if(next==='REVISION'&&!note)throw Error('Catatan revisi wajib diisi');
    }
    if(r.kind==='ALAT'&&r.itemId&&['APPROVED','OUT','RETURNED'].includes(next)){
-     // Atomic function locks per inventory item and enforces stock under concurrent approvals.
+     // Pengajuan lama dengan inventaris terdaftar tetap memakai pemeriksaan stok atomik.
      await db()`SELECT sospro_loan_transition(${r.code},${next},${note})`;
    }else{
+     // Pengajuan alat berupa teks bebas diverifikasi stok/ketersediaannya secara manual oleh Admin.
      r.status=next;r.note=note;r.updatedAt=now();await saveRecord('requests',r.code,r);
    }
    await logAction(r.code,`${user.name} (${user.username})`,next,note);result={code:r.code,status:next};break;
